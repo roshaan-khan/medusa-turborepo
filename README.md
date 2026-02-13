@@ -1,135 +1,110 @@
-# Turborepo starter
+# Multi-tenant Store with Customizer
 
-This Turborepo starter is maintained by the Turborepo core team.
+This project is a monorepo powered by [Turborepo](https://turbo.build/repo), featuring a Medusa v2 backend and a Next.js storefront.
 
-## Using this example
+## Project Structure
 
-Run the following command:
+- `apps/store`: Medusa v2 Backend (pnpm)
+- `apps/store-storefront`: Next.js Storefront (yarn)
+- `packages/*`: Shared configurations and utilities
 
-```sh
-npx create-turbo@latest
+## Prerequisites
+
+- **Node.js**: v20 or higher
+- **pnpm**: v9 or higher (for root and backend)
+- **Yarn**: v4 or higher (for storefront)
+- **Docker**: For running Postgres and Redis
+
+## Getting Started
+
+### 1. Root Installation
+
+From the root directory, install the workspaces dependencies:
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+### 2. Backend Setup (`apps/store`)
 
-This Turborepo includes the following packages/apps:
+The backend requires a PostgreSQL database and a Redis instance.
 
-### Apps and Packages
+#### A. Run Docker Containers
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+If you don't have them running, you can start them using Docker. 
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+> **Note**: This project is configured to use port **5433** for Postgres to avoid common local port conflicts on port 5432.
 
-### Utilities
+```bash
+# Start Postgres on port 5433
+docker run -d --name postgres-db -e POSTGRES_PASSWORD=postgres123 -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres-db -p 5433:5432 postgres:latest
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+# Start Redis on port 6379
+docker run -d --name redis-server -p 6379:6379 redis:latest
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+#### B. Configure Environment Variables
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+Navigate to `apps/store` and ensure your `.env` file is set up correctly:
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```env
+REDIS_URL=redis://127.0.0.1:6379
+DATABASE_URL=postgres://postgres:postgres123@127.0.0.1:5433/postgres-db
+JWT_SECRET=supersecret
+COOKIE_SECRET=supersecret
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+#### C. Run Migrations & Seed Data
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+cd apps/store
+pnpm exec medusa db:migrate
+pnpm seed
 ```
 
-### Remote Caching
+#### D. Start the Backend
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
+```bash
+pnpm dev
 ```
-cd my-turborepo
+The backend will be available at `http://localhost:9000`.
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+---
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+### 3. Storefront Setup (`apps/store-storefront`)
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+#### A. Installation
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+The storefront uses Yarn Berry.
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```bash
+cd apps/store-storefront
+yarn install
 ```
 
-## Useful Links
+#### B. Start the Storefront
 
-Learn more about the power of Turborepo:
+```bash
+yarn dev
+```
+The storefront will be available at `http://localhost:8000`.
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+## Development Commands
+
+- `pnpm dev`: Runs both backend and storefront in development mode (via Turbo).
+- `pnpm build`: Builds all applications.
+- `pnpm lint`: Lints all applications.
+
+## Troubleshooting
+
+### PostgreSQL Connection Timeouts
+If you encounter `KnexTimeoutError` during seeding or startup:
+- Ensure the Docker container is running (`docker ps`).
+- Verify the port in `DATABASE_URL` matches the mapped port (e.g., `5433`).
+- Use `127.0.0.1` instead of `localhost` in `.env` to avoid IPv6 resolution issues on Windows.
+
+### Redis Warning
+If you see "redisUrl not found", ensure `REDIS_URL` is defined in your `.env` and that `medusa-config.ts` is passing it to `projectConfig.redisUrl`.
+
+### Storefront Yarn Issues
+If `yarn dev` fails with "Cannot find module ... .yarn/releases/yarn-...", try running `corepack enable` and `yarn set version stable` to reset the yarn binary.
