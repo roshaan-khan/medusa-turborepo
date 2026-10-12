@@ -1,0 +1,12 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: Staging
+      url: http://localhost:8000   # where the storefront runs; the local worker can reach localhost
+    steps:
+      - run: echo "real deploy steps go here"
